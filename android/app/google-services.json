@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "479194781192",
+    "project_id": "chatter-6bbcf",
+    "storage_bucket": "chatter-6bbcf.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:479194781192:android:ca6b9290a3a312e238e3bd",
+        "android_client_info": {
+          "package_name": "com.example.flutter_chatter"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "479194781192-d64gg1ojk29boaaehho62oofnp563f90.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC8o4C3LwoB-4_2pJFoCNYpUc0kc4FyznY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "479194781192-d64gg1ojk29boaaehho62oofnp563f90.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
