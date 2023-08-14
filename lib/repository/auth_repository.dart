@@ -12,7 +12,7 @@ class AuthRepository{
       if (user != null) {
         return UserModel(id: user.uid, email: user.email.toString());
       } else {
-        return  UserModel(id: "empty", email: '');
+        return  UserModel(id: "empty");
       }
     });
   }
@@ -24,10 +24,16 @@ class AuthRepository{
         .toList();
   }
 
-  Future<UserCredential?> signUp(String email, String password) async {
+  Future<UserCredential?> signUp(UserModel user) async {
     try{
       UserCredential userCredential = await FirebaseAuth.instance.
-        createUserWithEmailAndPassword(email: email, password: password);
+        createUserWithEmailAndPassword(email: user.email.toString(), password: user.password.toString());
+
+      firebaseFirestore.collection('users').doc(userCredential.user!.uid).set({
+        'uid': userCredential.user!.uid,
+        'name': user.name,
+        'email': user.email
+      });
         
       verifyEmail();
       return userCredential;
@@ -37,10 +43,10 @@ class AuthRepository{
     }
   }
 
-  Future<UserCredential?> signIn(String email, String password) async {
+  Future<UserCredential?> signIn(UserModel user) async {
     try{
       UserCredential userCredential = await FirebaseAuth.instance.
-        signInWithEmailAndPassword(email: email, password: password);
+        signInWithEmailAndPassword(email: user.email.toString(), password: user.password.toString());
       
       return userCredential;
     }
