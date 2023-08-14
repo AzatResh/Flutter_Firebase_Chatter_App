@@ -3,8 +3,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_chatter/bloc/authentication_bloc/auth_bloc.dart';
+import 'package:flutter_chatter/bloc/formBloc/form_bloc.dart';
+import 'package:flutter_chatter/components/errorDialog.dart';
 import 'package:flutter_chatter/components/myButton.dart';
-import 'package:flutter_chatter/components/myTextField.dart';
+import 'package:flutter_chatter/components/textFields/myTextField.dart';
+import 'package:flutter_chatter/components/textFields/emailTextField.dart';
+import 'package:flutter_chatter/components/textFields/passwordTextField.dart';
+import 'package:flutter_chatter/screens/home.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,46 +21,44 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-
-  //firebase
-  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  final FirebaseFirestore _fireStore = FirebaseFirestore.instance;
-
-  //text controllers
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-
-  Future<void> signIn() async {
-    try{
-      UserCredential user = await _firebaseAuth.signInWithEmailAndPassword(
-        email: emailController.text, 
-        password: passwordController.text
-      );
-      _fireStore.collection('users').doc(user.user!.uid).set({
-        'uid': user.user!.uid,
-        'email': emailController.text
-      }, SetOptions(merge: true));
-
-      if(user != null && mounted){
-        Navigator.pushReplacementNamed(context, '/home');
-      }
-    }
-    catch(error){
-      if(mounted){
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(error.toString()),
-            duration: Duration(seconds: 3),
-            backgroundColor: Colors.red,
-          )
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return MultiBlocListener(
+        listeners: [
+          BlocListener<FormBloc, FormsValidateState>(
+            listener: (context, state) {
+              if (state.errorMessage.isNotEmpty) {
+                if(state.isEmailSended){
+                  showDialog(
+                    context: context,
+                    builder: (context) =>
+                      ErrorDialog(title: "Проверьте email", errorMessage: state.errorMessage, navigateToLogin: false,));
+                } else {
+                  showDialog(
+                    context: context,
+                    builder: (context) =>
+                      ErrorDialog(title: "Ошибка", errorMessage: state.errorMessage, navigateToLogin: false,));
+                }
+              } else if (state.isFormValid && !state.isLoading) {
+                context.read<AuthBloc>().add(AuthStartedEvent());
+                context.read<FormBloc>().add(FormSucceeded());
+              } else if (state.isFormValidateFailed) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Исправьте все ошибки в полях!'), backgroundColor: Colors.red,));
+              }
+            },
+          ),
+          BlocListener<AuthBloc, AuthState>(
+            listener: (context, state) {
+              if (state is AuthSuccessState) {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const HomePage()),
+                  (Route<dynamic> route) => false);
+              }
+            },
+          ),
+        ],
+      child: Scaffold(
       body: SingleChildScrollView(
         physics: ClampingScrollPhysics(),
         child: SafeArea(
@@ -77,37 +82,49 @@ class _LoginPageState extends State<LoginPage> {
                   SizedBox(height: 20,),
                     
                   // email textfield
-                  MyTextField(
-                    textController: emailController, 
-                    hintText: 'Email', 
-                    obscureText: false),
+                  EmailTextField(),
                   SizedBox(height: 10,),
 
                   // password textfield
-                  MyTextField(
-                    textController: passwordController, 
-                    hintText: 'Your password', 
-                    obscureText: true),
-                  SizedBox(height: 15,),
+                  PasswordTextField(isConfirmField: false),
+                  SizedBox(height: 20,),
 
                   // sign button
-                  MyButton(
-                    ontap: signIn, 
-                    text: 'Sigh in'),
-                  SizedBox(height: 40,),
+                  BlocBuilder<FormBloc, FormsValidateState>(
+                    builder: (context, state) {
+                      return state.isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : MyButton(
+                        ontap: !state.isFormValid
+                          ? () => context.read<FormBloc>().add(FormSubmitted(value: Status.signIn))
+                          : null,
+                        text: 'Sign In'
+                      );
+                    }
+                  ),
 
                   // текст регистрации
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
                       Text('Not a member?'),
-                      SizedBox(width: 5,),
-                      GestureDetector(
-                        child: Text("Register now",
-                          style: TextStyle(fontWeight: FontWeight.bold),),
-                        onTap: () {
-                          Navigator.pushReplacementNamed(context, '/register');
-                        },
+                      BlocBuilder<FormBloc, FormsValidateState>(
+                        builder: (context, state) {
+                          return GestureDetector(
+                            child: Container(
+                              alignment: Alignment.center,
+                              height: 80,
+                              width: 100,
+                              color: Colors.transparent,
+                              child: Text("Register now",
+                                style: TextStyle(fontWeight: FontWeight.bold),),
+                            ),
+                            onTap: () {
+                              context.read<FormBloc>().add(FormInitEVent());
+                              Navigator.pushReplacementNamed(context, '/register');
+                            },
+                          );
+                        }
                       )
                     ],
                   )
@@ -117,6 +134,7 @@ class _LoginPageState extends State<LoginPage> {
           )
         )
       )
+    )
     );
   }
 

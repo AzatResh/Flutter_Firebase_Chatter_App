@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_chatter/components/chatBubble.dart';
-import 'package:flutter_chatter/components/myTextField.dart';
+import 'package:flutter_chatter/components/textFields/myTextField.dart';
 import 'package:flutter_chatter/model/message.dart';
 
 class ChatPage extends StatefulWidget {
@@ -68,7 +68,7 @@ class _ChatPageState extends State<ChatPage> {
       .collection('chat_rooms')
       .doc(chatRoomId)
       .collection('messages')
-      .orderBy('timestamp', descending: false)
+      .orderBy('timestamp', descending: true)
       .snapshots();
   }
 
@@ -108,6 +108,7 @@ class _ChatPageState extends State<ChatPage> {
           alignment: Alignment.bottomCenter,
           child: ListView(
             shrinkWrap: true,
+            reverse: true,
             children: snapshot.data!.docs.map((el) => _messageItem(el)).toList(),
           ),
         );
